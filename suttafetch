@@ -4,7 +4,7 @@ SuttaFetch
 A command-line tool to fetch and display a random sutta from dhammatalks.org
 
 Version: 1.0.0
-Author: SuttaFetch Contributors
+Author: Jonathan Herz
 License: MIT
 
 Usage:
@@ -67,6 +67,40 @@ def get_random_sutta():
         sys.exit(1)
 
 
+def _extract_verse_stanzas(verse_div):
+    """Extract stanzas from a <div class='verse'> element.
+
+    Direct <p> children form the first stanza.
+    Each <div class='verse-add'> child forms a subsequent stanza.
+    Lines within a stanza are joined with newlines.
+    """
+    stanzas = []
+
+    # First stanza: direct <p> children (not inside a nested div)
+    first_lines = []
+    for child in verse_div.children:
+        if getattr(child, 'name', None) == 'p':
+            text = child.get_text(strip=True)
+            if text:
+                first_lines.append(text)
+        elif getattr(child, 'name', None) == 'div':
+            break  # hit a verse-add, first stanza is done
+    if first_lines:
+        stanzas.append('\n'.join(first_lines))
+
+    # Subsequent stanzas from verse-add divs
+    for va in verse_div.find_all('div', class_='verse-add'):
+        lines = []
+        for p in va.find_all('p'):
+            text = p.get_text(strip=True)
+            if text:
+                lines.append(text)
+        if lines:
+            stanzas.append('\n'.join(lines))
+
+    return stanzas
+
+
 def parse_sutta(html_content):
     """Parse the sutta HTML and extract relevant information"""
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -85,27 +119,35 @@ def parse_sutta(html_content):
     # Get the main content - looking for paragraphs after the title
     # The content is typically in <p> tags after the h1
     content_paragraphs = []
-    
+
     # Find the main content area
     # The sutta text typically starts after the title
     main_content = soup.find('h1')
     if main_content:
         # Get all siblings after the h1
         for sibling in main_content.find_next_siblings():
-            # Skip navigation elements
+            # Stop at notes section
+            if sibling.name == 'h2' and 'Notes' in sibling.get_text():
+                break
+            if sibling.name == 'div' and 'note' in sibling.get('class', []):
+                break
+
+            # Plain paragraphs (no class = main prose content)
             if sibling.name == 'p' and 'class' not in sibling.attrs:
                 text = sibling.get_text(strip=True)
                 if text:
                     content_paragraphs.append(text)
-            # Also include blockquotes which often contain the sutta text
+            # Blockquotes which often contain the sutta text
             elif sibling.name == 'blockquote':
                 for p in sibling.find_all('p'):
                     text = p.get_text(strip=True)
                     if text:
                         content_paragraphs.append(text)
-            # Stop at notes section
-            elif sibling.name == 'h2' and 'Notes' in sibling.get_text():
-                break
+            # Verse divs contain poem/verse stanzas
+            elif sibling.name == 'div' and 'verse' in sibling.get('class', []):
+                stanzas = _extract_verse_stanzas(sibling)
+                for stanza in stanzas:
+                    content_paragraphs.append(stanza)
     
     # Get the URL
     url = soup.find('link', {'rel': 'canonical'})
@@ -120,9 +162,11 @@ def parse_sutta(html_content):
 
 
 def format_terminal_width(text, width=80):
-    """Format text to fit terminal width"""
+    """Format text to fit terminal width, preserving intentional line breaks"""
     wrapper = textwrap.TextWrapper(width=width)
-    return wrapper.fill(text)
+    lines = text.split('\n')
+    wrapped = [wrapper.fill(line) for line in lines]
+    return '\n'.join(wrapped)
 
 
 def display_sutta(sutta_data, width=80, show_url=True):
@@ -141,6 +185,7 @@ def display_sutta(sutta_data, width=80, show_url=True):
     if show_url and sutta_data['url']:
         print()
         print(f"{Colors.BOLD}Source: {sutta_data['url']}{Colors.END}")
+        print(f"Translated from the Pāli by Ṭhānissaro Bhikkhu")
 
 
 def main():
