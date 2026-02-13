@@ -1,6 +1,6 @@
 # SuttaFetch
 
-A command-line tool that fetches and displays a random Buddhist sutta (discourse) from [dhammatalks.org](https://www.dhammatalks.org).
+A command-line tool that fetches and displays a random sutta (discourse) from [dhammatalks.org](https://www.dhammatalks.org).
 
 ## Features
 
