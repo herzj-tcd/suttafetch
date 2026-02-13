@@ -1,87 +1,41 @@
 # SuttaFetch
 
-A simple command-line application that fetches and displays a random Buddhist sutta (discourse) from [dhammatalks.org](https://www.dhammatalks.org).
+A command-line tool that fetches and displays a random Buddhist sutta (discourse) from [dhammatalks.org](https://www.dhammatalks.org).
 
 ## Features
 
 - Fetches random suttas from the Pāli Canon translated by Ṭhānissaro Bhikkhu
-- Clean, readable terminal output with text wrapping
+- Clean, readable terminal output with colored formatting
 - Customizable display width
-- Shows sutta reference, title, and full content
-- Includes source URL for further reading
+- Option to disable colors or hide the source URL
 
 ## Installation
 
-### Prerequisites
-
-- Python 3.7 or higher
-- pip (Python package manager)
-
-### Quick Install
-
-1. Clone or download this repository
-2. Install dependencies:
-
-**Ubuntu/Debian (Recommended):**
-```bash
-sudo apt update
-sudo apt install python3-requests python3-bs4
-```
-
-**Other systems or alternative methods:**
-```bash
-pip install -r requirements.txt --user
-```
-
-See [INSTALL.md](INSTALL.md) for detailed installation instructions and troubleshooting.
-
-3. Make the script executable (Linux/Mac):
+Requires Python 3.7 or higher.
 
 ```bash
-chmod +x suttafetch
+pip install git+https://github.com/herzj-tcd/suttafetch.git
 ```
 
-### Optional: Add to PATH
+This installs the `suttafetch` command and all dependencies automatically.
 
-To run the command from anywhere, you can create a symbolic link:
+To install from a local copy instead:
 
 ```bash
-# Linux/Mac
-sudo ln -s $(pwd)/suttafetch /usr/local/bin/suttafetch
-
-# Then you can run it from anywhere:
-suttafetch
+git clone https://github.com/herzj-tcd/suttafetch.git
+cd suttafetch
+pip install .
 ```
-
-Or on Windows, add the script directory to your PATH environment variable.
 
 ## Usage
 
-### Basic Usage
-
 ```bash
-./suttafetch
-```
-
-Or if added to PATH:
-
-```bash
-suttafetch
-```
-
-### Options
-
-```bash
-# Custom terminal width (default: 80)
-./suttafetch -w 100
-./suttafetch --width 100
-
-# Hide the source URL
-./suttafetch --no-url
-
-# Show help
-./suttafetch -h
-./suttafetch --help
+suttafetch                # Fetch and display a random sutta
+suttafetch -w 100         # Set display width (default: 80)
+suttafetch --no-url       # Hide the source URL
+suttafetch --no-color     # Disable colored output
+suttafetch --version      # Show version
+suttafetch --help         # Show all options
 ```
 
 ### Example Output
@@ -89,87 +43,49 @@ suttafetch
 ```
 Fetching random sutta from dhammatalks.org...
 
-AN 4:89: View Diṭṭhi Sutta  (AN 4:89)
+AN 4:89: View Diṭṭhi Sutta
 
-"Monks, these four persons are to be found existing in the world. Which four?
-The unshakeable contemplative, the white-lotus contemplative, the red-lotus
-contemplative, the most refined contemplative among contemplatives.
+"Monks, these four persons are to be found existing in the world. Which
+four? The unshakeable contemplative, the white-lotus contemplative, the
+red-lotus contemplative, the most refined contemplative among
+contemplatives.
 
-[... sutta content ...]
+[...]
 
 Source: https://www.dhammatalks.org/suttas/AN/AN4_89.html
+Translated from the Pāli by Ṭhānissaro Bhikkhu
 ```
 
-## How It Works
+## Uninstalling
 
-1. The script makes a request to `https://www.dhammatalks.org/random_sutta.php`
-2. This URL redirects to a random sutta page
-3. The HTML is parsed using BeautifulSoup to extract:
-   - Sutta title and reference (e.g., "AN 4:89")
-   - Main content paragraphs
-   - Source URL
-4. The content is formatted and displayed in the terminal with proper text wrapping
-
-## Dependencies
-
-- `requests` - For HTTP requests
-- `beautifulsoup4` - For HTML parsing
+```bash
+pip uninstall suttafetch
+```
 
 ## Troubleshooting
 
-### "externally-managed-environment" Error (Ubuntu/Debian)
-
-Modern Ubuntu/Debian systems protect the system Python. Use one of these instead:
+**Network issues:** If you're behind a proxy or firewall, set the proxy environment variables before running:
 
 ```bash
-# Method 1: System packages (recommended)
-sudo apt install python3-requests python3-bs4
-
-# Method 2: User installation
-pip3 install -r requirements.txt --user
-```
-
-See [INSTALL.md](INSTALL.md) for complete details.
-
-### Network Issues
-
-If you're behind a proxy or firewall, you may need to set environment variables:
-
-```bash
-export HTTP_PROXY=http://your-proxy:port
 export HTTPS_PROXY=http://your-proxy:port
-./random-sutta.py
-```
-
-### Permission Denied
-
-If you get a "Permission denied" error on Linux/Mac:
-
-```bash
-chmod +x suttafetch
+suttafetch
 ```
 
 ## About the Suttas
 
-The suttas are Buddhist discourses from the Pāli Canon, translated by Ṭhānissaro Bhikkhu. They cover a wide range of topics including:
+The Sutta Piṭaka is the second part of the Pāḷi Tipiṭaka, the definitive canon of Theravāda Buddhism. The suttas are discourses dating from the earliest days of Indian Buddhism, and have guided Buddhist belief and practice for over two thousand years. They deal with such matters as the condition of humanity and the world, everyday conduct, wisdom and discernment, the path to awakening, and stories and teachings of the Buddha.
 
-- Meditation practices
-- Ethical conduct
-- Wisdom and discernment
-- The path to awakening
-- Stories and teachings of the Buddha
-
-All content is sourced from [dhammatalks.org](https://www.dhammatalks.org), which offers these translations freely.
+All translations are sourced from [dhammatalks.org](https://www.dhammatalks.org), which offers them freely.
 
 ## License
 
-This tool is provided as-is for personal use. The sutta translations are the work of Ṭhānissaro Bhikkhu and are available at dhammatalks.org.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Feel free to submit issues or pull requests if you have suggestions for improvements!
+Issues and pull requests are welcome.
 
 ## Acknowledgments
 
-- Ṭhānissaro Bhikkhu for the excellent sutta translations
+- Ṭhānissaro Bhikkhu for the sutta translations
 - [dhammatalks.org](https://www.dhammatalks.org) for making these teachings freely available

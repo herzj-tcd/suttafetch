@@ -4,14 +4,14 @@ SuttaFetch
 A command-line tool to fetch and display a random sutta from dhammatalks.org
 
 Version: 1.0.0
-Author: Jonathan Herz
+Author: Jonathan Herz (herzj@tcd.ie)
 License: MIT
 
 Usage:
-    ./suttafetch              # Fetch a random sutta
-    ./suttafetch -w 100       # Set custom width
-    ./suttafetch --no-url     # Hide the source URL
-    ./suttafetch --no-color   # Disable colors
+    suttafetch              # Fetch a random sutta
+    suttafetch -w 100       # Set custom width
+    suttafetch --no-url     # Hide the source URL
+    suttafetch --no-color   # Disable colors
 """
 
 import requests
