@@ -104,7 +104,12 @@ def _extract_verse_stanzas(verse_div):
 def parse_sutta(html_content):
     """Parse the sutta HTML and extract relevant information"""
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
+    # Remove footnote links (e.g. <a href="#an4.89note01">1</a>)
+    for a in soup.find_all('a', href=True):
+        if 'note' in a['href'] and a.get_text(strip=True).isdigit():
+            a.decompose()
+
     # Extract title
     title_elem = soup.find('h1')
     title = title_elem.get_text(strip=True) if title_elem else "Unknown Sutta"
@@ -153,6 +158,14 @@ def parse_sutta(html_content):
     url = soup.find('link', {'rel': 'canonical'})
     sutta_url = url['href'] if url else ""
     
+    # Replace em dashes (—) with spaced em dashes for readability
+    # Process line-by-line to preserve intentional newlines in verses
+    def fix_dashes(text):
+        lines = text.split('\n')
+        lines = [' '.join(line.replace('—', ' — ').split()) for line in lines]
+        return '\n'.join(lines)
+    content_paragraphs = [fix_dashes(p) for p in content_paragraphs]
+
     return {
         'title': title,
         'reference': sutta_ref,
@@ -185,7 +198,7 @@ def display_sutta(sutta_data, width=80, show_url=True):
     if show_url and sutta_data['url']:
         print()
         print(f"{Colors.BOLD}Source: {sutta_data['url']}{Colors.END}")
-        print(f"Translated from the Pāli by Ṭhānissaro Bhikkhu")
+        print(f"{Colors.BOLD}Translated from the Pāli by Ṭhānissaro Bhikkhu{Colors.END}")
 
 
 def main():
