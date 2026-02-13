@@ -15,10 +15,11 @@ Usage:
 """
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import sys
 import textwrap
 import argparse
+import re
 import os
 
 __version__ = "1.0.0"
@@ -35,6 +36,8 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     SAFFRON = '\033[38;5;214m'  # Saffron/orange color
+    ITALIC = '\033[3m'
+    ITALIC_END = '\033[23m'
     END = '\033[0m'
     
     @staticmethod
@@ -48,6 +51,8 @@ class Colors:
         Colors.BOLD = ''
         Colors.UNDERLINE = ''
         Colors.SAFFRON = ''
+        Colors.ITALIC = ''
+        Colors.ITALIC_END = ''
         Colors.END = ''
 
 
@@ -67,6 +72,11 @@ def get_random_sutta():
         sys.exit(1)
 
 
+def _normalize(text):
+    """Extract text and normalize whitespace, preserving spaces between inline elements."""
+    return ' '.join(text.split())
+
+
 def _extract_verse_stanzas(verse_div):
     """Extract stanzas from a <div class='verse'> element.
 
@@ -80,7 +90,7 @@ def _extract_verse_stanzas(verse_div):
     first_lines = []
     for child in verse_div.children:
         if getattr(child, 'name', None) == 'p':
-            text = child.get_text(strip=True)
+            text = _normalize(child.get_text())
             if text:
                 first_lines.append(text)
         elif getattr(child, 'name', None) == 'div':
@@ -92,7 +102,7 @@ def _extract_verse_stanzas(verse_div):
     for va in verse_div.find_all('div', class_='verse-add'):
         lines = []
         for p in va.find_all('p'):
-            text = p.get_text(strip=True)
+            text = _normalize(p.get_text())
             if text:
                 lines.append(text)
         if lines:
@@ -110,9 +120,32 @@ def parse_sutta(html_content):
         if 'note' in a['href'] and a.get_text(strip=True).isdigit():
             a.decompose()
 
+    # Replace <i> and <em> tags with ANSI italic markers
+    _ITALIC_START = '\x00IS\x00'
+    _ITALIC_END = '\x00IE\x00'
+    for tag in soup.find_all(['i', 'em']):
+        tag.insert(0, NavigableString(_ITALIC_START))
+        tag.append(NavigableString(_ITALIC_END))
+        tag.unwrap()
+
+    # Replace italic markers with ANSI codes, ensuring spaces around italic text
+    def apply_italics(text):
+        text = text.replace(_ITALIC_START, Colors.ITALIC).replace(_ITALIC_END, Colors.ITALIC_END)
+        if Colors.ITALIC:
+            text = re.sub(r'(\w)' + re.escape(Colors.ITALIC), r'\1 ' + Colors.ITALIC, text)
+            text = re.sub(re.escape(Colors.ITALIC_END) + r'(\w)', Colors.ITALIC_END + r' \1', text)
+        return text
+
     # Extract title
     title_elem = soup.find('h1')
-    title = title_elem.get_text(strip=True) if title_elem else "Unknown Sutta"
+    if title_elem:
+        for br in title_elem.find_all('br'):
+            br.replace_with('\n')
+        lines = title_elem.get_text().split('\n')
+        title = '\n'.join(' '.join(line.split()) for line in lines if line.strip())
+    else:
+        title = "Unknown Sutta"
+    title = apply_italics(title)
     
     # Extract sutta reference (e.g., AN 4:89)
     breadcrumb = soup.select('ol.breadcrumb li')
@@ -130,26 +163,51 @@ def parse_sutta(html_content):
     main_content = soup.find('h1')
     if main_content:
         # Get all siblings after the h1
+        in_intro = False
         for sibling in main_content.find_next_siblings():
-            # Stop at notes section
+            classes = sibling.get('class', [])
+
+            # Stop at notes heading (end of sutta body)
             if sibling.name == 'h2' and 'Notes' in sibling.get_text():
                 break
-            if sibling.name == 'div' and 'note' in sibling.get('class', []):
-                break
 
-            # Plain paragraphs (no class = main prose content)
-            if sibling.name == 'p' and 'class' not in sibling.attrs:
-                text = sibling.get_text(strip=True)
+            # Track intro section (between <h2 class="intro"> and <p class="stars">)
+            if sibling.name == 'h2' and 'intro' in classes:
+                in_intro = True
+                continue
+            # Stars separator marks the end of intro material
+            if sibling.name == 'p' and 'stars' in classes:
+                in_intro = False
+                content_paragraphs.append('* * *')
+                continue
+
+            # Skip translation notes
+            if sibling.name == 'div' and 'note' in classes:
+                continue
+
+            # Skip non-intro section headers (e.g. "A. Body")
+            if sibling.name == 'h2':
+                continue
+
+            # Plain paragraphs (no class, or itiSecPP = Iti prose sections)
+            if sibling.name == 'p' and ('class' not in sibling.attrs or 'itiSecPP' in classes):
+                text = _normalize(sibling.get_text())
                 if text:
                     content_paragraphs.append(text)
             # Blockquotes which often contain the sutta text
             elif sibling.name == 'blockquote':
                 for p in sibling.find_all('p'):
-                    text = p.get_text(strip=True)
+                    text = _normalize(p.get_text())
+                    if text:
+                        content_paragraphs.append(text)
+            # Block divs contain quoted passages
+            elif sibling.name == 'div' and 'block' in classes:
+                for p in sibling.find_all('p'):
+                    text = _normalize(p.get_text())
                     if text:
                         content_paragraphs.append(text)
             # Verse divs contain poem/verse stanzas
-            elif sibling.name == 'div' and 'verse' in sibling.get('class', []):
+            elif sibling.name == 'div' and 'verse' in classes:
                 stanzas = _extract_verse_stanzas(sibling)
                 for stanza in stanzas:
                     content_paragraphs.append(stanza)
@@ -165,6 +223,8 @@ def parse_sutta(html_content):
         lines = [' '.join(line.replace('—', ' — ').split()) for line in lines]
         return '\n'.join(lines)
     content_paragraphs = [fix_dashes(p) for p in content_paragraphs]
+
+    content_paragraphs = [apply_italics(p) for p in content_paragraphs]
 
     return {
         'title': title,
