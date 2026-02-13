@@ -5,7 +5,7 @@ A command-line tool that fetches and displays a random Buddhist sutta (discourse
 ## Features
 
 - Fetches random suttas from the Pāli Canon translated by Ṭhānissaro Bhikkhu
-- Clean, readable terminal output with colored formatting
+- Clean, readable terminal output
 - Customizable display width
 - Option to disable colors or hide the source URL
 
@@ -88,4 +88,4 @@ Issues and pull requests are welcome.
 ## Acknowledgments
 
 - Ṭhānissaro Bhikkhu for the sutta translations
-- [dhammatalks.org](https://www.dhammatalks.org) for making these teachings freely available
+- [dhammatalks.org](https://www.dhammatalks.org) for making these translations freely available
