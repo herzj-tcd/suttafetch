@@ -5,8 +5,8 @@ A command-line tool that fetches and displays a random sutta (discourse) from [d
 ## Features
 
 - Fetches random suttas from the Pāli Canon translated by Ṭhānissaro Bhikkhu
-- Clean, readable terminal output
-- Customizable display width
+- Clean terminal output
+- Customisable display width
 - Option to disable colors or hide the source URL
 
 ## Installation
@@ -43,7 +43,8 @@ suttafetch --help         # Show all options
 ```
 Fetching random sutta from dhammatalks.org...
 
-AN 4:89: View Diṭṭhi Sutta
+AN 4:89: Diṭṭhi Sutta
+View
 
 "Monks, these four persons are to be found existing in the world. Which
 four? The unshakeable contemplative, the white-lotus contemplative, the
