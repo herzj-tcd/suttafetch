@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""
+SuttaFetch
+A command-line tool to fetch and display a random sutta from dhammatalks.org
+
+Version: 1.0.0
+Author: SuttaFetch Contributors
+License: MIT
+
+Usage:
+    ./suttafetch              # Fetch a random sutta
+    ./suttafetch -w 100       # Set custom width
+    ./suttafetch --no-url     # Hide the source URL
+    ./suttafetch --no-color   # Disable colors
+"""
+
+import requests
+from bs4 import BeautifulSoup
+import sys
+import textwrap
+import argparse
+import os
+
+__version__ = "1.0.0"
+
+
+# ANSI color codes
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    SAFFRON = '\033[38;5;214m'  # Saffron/orange color
+    END = '\033[0m'
+    
+    @staticmethod
+    def disable():
+        Colors.HEADER = ''
+        Colors.BLUE = ''
+        Colors.CYAN = ''
+        Colors.GREEN = ''
+        Colors.YELLOW = ''
+        Colors.RED = ''
+        Colors.BOLD = ''
+        Colors.UNDERLINE = ''
+        Colors.SAFFRON = ''
+        Colors.END = ''
+
+
+def get_random_sutta():
+    """Fetch a random sutta from dhammatalks.org"""
+    try:
+        # The random_sutta.php redirects to a random sutta page
+        response = requests.get('https://www.dhammatalks.org/random_sutta.php', 
+                                allow_redirects=True, 
+                                timeout=10)
+        response.raise_for_status()
+        return response
+    except requests.RequestException as e:
+        print(f"{Colors.RED}Error fetching sutta: {e}{Colors.END}", file=sys.stderr)
+        print(f"\n{Colors.YELLOW}Note: If you're behind a proxy or firewall, you may need to configure", file=sys.stderr)
+        print(f"your network settings or set HTTP_PROXY/HTTPS_PROXY environment variables.{Colors.END}", file=sys.stderr)
+        sys.exit(1)
+
+
+def parse_sutta(html_content):
+    """Parse the sutta HTML and extract relevant information"""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Extract title
+    title_elem = soup.find('h1')
+    title = title_elem.get_text(strip=True) if title_elem else "Unknown Sutta"
+    
+    # Extract sutta reference (e.g., AN 4:89)
+    breadcrumb = soup.select('ol.breadcrumb li')
+    if len(breadcrumb) >= 3:
+        sutta_ref = breadcrumb[-1].get_text(strip=True)
+    else:
+        sutta_ref = ""
+    
+    # Get the main content - looking for paragraphs after the title
+    # The content is typically in <p> tags after the h1
+    content_paragraphs = []
+    
+    # Find the main content area
+    # The sutta text typically starts after the title
+    main_content = soup.find('h1')
+    if main_content:
+        # Get all siblings after the h1
+        for sibling in main_content.find_next_siblings():
+            # Skip navigation elements
+            if sibling.name == 'p' and 'class' not in sibling.attrs:
+                text = sibling.get_text(strip=True)
+                if text:
+                    content_paragraphs.append(text)
+            # Also include blockquotes which often contain the sutta text
+            elif sibling.name == 'blockquote':
+                for p in sibling.find_all('p'):
+                    text = p.get_text(strip=True)
+                    if text:
+                        content_paragraphs.append(text)
+            # Stop at notes section
+            elif sibling.name == 'h2' and 'Notes' in sibling.get_text():
+                break
+    
+    # Get the URL
+    url = soup.find('link', {'rel': 'canonical'})
+    sutta_url = url['href'] if url else ""
+    
+    return {
+        'title': title,
+        'reference': sutta_ref,
+        'content': content_paragraphs,
+        'url': sutta_url
+    }
+
+
+def format_terminal_width(text, width=80):
+    """Format text to fit terminal width"""
+    wrapper = textwrap.TextWrapper(width=width)
+    return wrapper.fill(text)
+
+
+def display_sutta(sutta_data, width=80, show_url=True):
+    """Display the sutta in a formatted way"""
+    # Title in saffron
+    title_text = f"{sutta_data['reference']}: {sutta_data['title']}"
+    print(f"{Colors.BOLD}{Colors.SAFFRON}{format_terminal_width(title_text, width)}{Colors.END}")
+    print()
+    
+    # Content
+    for paragraph in sutta_data['content']:
+        print(format_terminal_width(paragraph, width))
+        print()
+    
+    # Footer with URL in bold
+    if show_url and sutta_data['url']:
+        print()
+        print(f"{Colors.BOLD}Source: {sutta_data['url']}{Colors.END}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Fetch and display a random sutta from dhammatalks.org',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                    Fetch and display a random sutta
+  %(prog)s -w 100             Use 100 character width
+  %(prog)s --no-color         Disable colored output
+  %(prog)s --no-url           Hide the source URL
+        """
+    )
+    parser.add_argument('-w', '--width', 
+                        type=int, 
+                        default=80,
+                        help='Terminal width for text wrapping (default: 80)')
+    parser.add_argument('--no-url', 
+                        action='store_true',
+                        help='Hide the source URL')
+    parser.add_argument('--no-color',
+                        action='store_true',
+                        help='Disable colored output')
+    parser.add_argument('-v', '--version',
+                        action='version',
+                        version=f'%(prog)s {__version__}')
+    
+    args = parser.parse_args()
+    
+    # Disable colors if requested or if output is not a terminal
+    if args.no_color or not sys.stdout.isatty():
+        Colors.disable()
+    
+    # Fetch and display the sutta
+    print(f"{Colors.YELLOW}Fetching random sutta from dhammatalks.org...{Colors.END}")
+    print()
+    
+    response = get_random_sutta()
+    sutta_data = parse_sutta(response.content)
+    display_sutta(sutta_data, width=args.width, show_url=not args.no_url)
+
+
+if __name__ == '__main__':
+    main()

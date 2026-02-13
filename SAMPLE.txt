@@ -1,0 +1,45 @@
+SAMPLE OUTPUT
+=============
+
+Here's what the actual terminal output looks like:
+
+
+Fetching random sutta from dhammatalks.org...
+
+AN 4:89: View Diṭṭhi Sutta  (AN 4:89)
+                                      ↑ This line appears in SAFFRON/ORANGE
+
+"Monks, these four persons are to be found existing in the world. Which four?
+The unshakeable contemplative, the white-lotus contemplative, the red-lotus
+contemplative, the most refined contemplative among contemplatives.
+
+"And how is a person an unshakeable contemplative? There is the case where a
+monk is a person of right view, right resolve, right speech, right action,
+right livelihood, right effort, right mindfulness, right concentration. This is
+how a person is an unshakeable contemplative.
+
+[... more sutta content ...]
+
+"These, monks, are four persons to be found existing in the world."
+
+                                                             ↓ This line is BOLD
+Source: https://www.dhammatalks.org/suttas/AN/AN4_89.html
+
+
+CHANGES MADE:
+=============
+
+✓ Renamed from "random-sutta.py" to "suttafetch"
+✓ Title line now displays in saffron/orange color (like a monk's robe)
+✓ Removed all ======= separator lines at top
+✓ Removed all ------- separator lines at bottom
+✓ Source attribution at bottom is now in BOLD
+✓ Clean, minimal design - just title, content, and attribution
+
+The app maintains all its functionality:
+- Customizable width (-w)
+- Color options (--no-color)
+- URL toggle (--no-url)
+- Help and version info
+
+Enjoy your daily Dhamma practice! 🙏
