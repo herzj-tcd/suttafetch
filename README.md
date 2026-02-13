@@ -2,13 +2,6 @@
 
 A command-line tool that fetches and displays a random sutta (discourse) from [dhammatalks.org](https://www.dhammatalks.org).
 
-## Features
-
-- Fetches random suttas from the Pāli Canon translated by Ṭhānissaro Bhikkhu
-- Clean terminal output
-- Customisable display width
-- Option to disable colors or hide the source URL
-
 ## Installation
 
 Requires Python 3.7 or higher.
