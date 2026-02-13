@@ -37,7 +37,6 @@ suttafetch --help         # Show all options
 Fetching random sutta from dhammatalks.org...
 
 AN 4:89: Diṭṭhi Sutta
-View
 
 "Monks, these four persons are to be found existing in the world. Which
 four? The unshakeable contemplative, the white-lotus contemplative, the
